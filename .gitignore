@@ -1,0 +1,9 @@
+.env
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+vendor/
+.idea/
+.vscode/
