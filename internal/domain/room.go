@@ -4,8 +4,8 @@ import "time"
 
 type Room struct {
 	ID            string
-	Name          string    // Nullable for 1:1 chats
-	IsGroup       bool      // False for 1:1, True for Group
+	Name          string // Nullable for 1:1 chats
+	IsGroup       bool   // False for 1:1, True for Group
 	CreatedAt     time.Time
 	LastMessageAt time.Time // Used to sort the chat list by newest message
 }
