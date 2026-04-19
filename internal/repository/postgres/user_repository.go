@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// blank identifier , force the compiler to check implementation immediately
 var _ domain.UserRepository = (*UserRepository)(nil)
 
 type UserRepository struct {
