@@ -62,11 +62,12 @@ func (h *Handler) ServeWS(c *gin.Context) {
 
 	// 4. Create the Client instance
 	client := &Client{
-		hub:     h.hub,
-		userID:  userID,
-		conn:    conn,
-		send:    make(chan *Message, 256),
-		roomIDs: roomIDs,
+		hub:         h.hub,
+		chatService: h.chatService,
+		userID:      userID,
+		conn:        conn,
+		send:        make(chan *Message, 256),
+		roomIDs:     roomIDs,
 	}
 
 	// 5. Register with the hub

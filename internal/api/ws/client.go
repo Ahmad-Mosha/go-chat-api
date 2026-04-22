@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Ahmad-Mosha/go-chat-api/internal/service"
 	"github.com/gorilla/websocket"
 )
 
@@ -25,6 +26,9 @@ const (
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	hub *Hub
+
+	// Chat service to persist messages
+	chatService *service.ChatService
 
 	// The user ID associated with this connection.
 	userID string
@@ -68,12 +72,25 @@ func (c *Client) readPump() {
 		
 		// In a full implementation, you might parse the messageData into a Message struct
 		// and send it to the hub:
-		var msg Message
-		err = json.Unmarshal(messageData, &msg)
+		var inboundMsg Message
+		err = json.Unmarshal(messageData, &inboundMsg)
 		if err == nil {
-			// Ensure sender is accurate
-			msg.SenderID = c.userID
-			c.hub.broadcast <- &msg
+			// Save to Postgres via ChatService
+			savedMsg, err := c.chatService.SendMessage(inboundMsg.RoomID, c.userID, inboundMsg.Content)
+			if err != nil {
+				log.Printf("failed to save message: %v", err)
+				continue
+			}
+
+			// Broadcast the saved message with accurate ID and Timestamp
+			outboundMsg := &Message{
+				ID:        savedMsg.ID,
+				RoomID:    savedMsg.RoomID,
+				SenderID:  savedMsg.SenderID,
+				Content:   savedMsg.Content,
+				CreatedAt: savedMsg.CreatedAt,
+			}
+			c.hub.broadcast <- outboundMsg
 		} else {
 			log.Printf("failed to parse message: %v", err)
 		}

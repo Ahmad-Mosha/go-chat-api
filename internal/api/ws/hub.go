@@ -1,13 +1,17 @@
 package ws
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 // Message represents a payload sent over the WebSocket
 type Message struct {
-	RoomID   string `json:"room_id"`
-	SenderID string `json:"sender_id"`
-	Content  string `json:"content"`
-	// Additional fields like ID, CreatedAt can be added here
+	ID        string    `json:"id"`
+	RoomID    string    `json:"room_id"`
+	SenderID  string    `json:"sender_id"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Hub maintains the set of active clients and broadcasts messages to the clients.
