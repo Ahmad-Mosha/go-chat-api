@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -44,10 +45,10 @@ func (h *ChatHandler) CreateRoom(c *gin.Context) {
 
 	room, err := h.chatService.CreateRoom(userID, req.Name, req.IsGroup, req.MemberIDs)
 	if err != nil {
-		switch err {
-		case service.ErrRoomExists:
+		switch {
+		case errors.Is(err, service.ErrRoomExists):
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-		case service.ErrCannotChatSelf:
+		case errors.Is(err, service.ErrCannotChatSelf):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -82,10 +83,10 @@ func (h *ChatHandler) GetRoom(c *gin.Context) {
 
 	room, err := h.chatService.GetRoom(roomID, userID)
 	if err != nil {
-		switch err {
-		case service.ErrNotRoomMember:
+		switch {
+		case errors.Is(err, service.ErrNotRoomMember):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		case service.ErrRoomNotFound:
+		case errors.Is(err, service.ErrRoomNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -111,7 +112,7 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 
 	msg, err := h.chatService.SendMessage(roomID, userID, req.Content)
 	if err != nil {
-		if err == service.ErrNotRoomMember {
+		if errors.Is(err, service.ErrNotRoomMember) {
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
@@ -135,7 +136,7 @@ func (h *ChatHandler) GetRoomMessages(c *gin.Context) {
 
 	messages, err := h.chatService.GetRoomMessages(roomID, userID, limit, offset)
 	if err != nil {
-		if err == service.ErrNotRoomMember {
+		if errors.Is(err, service.ErrNotRoomMember) {
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}

@@ -106,6 +106,10 @@ func (r *RoomRepository) GetRoomsByUser(userID string) ([]*domain.Room, error) {
 		}
 		rooms = append(rooms, room)
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("repository: error iterating rooms: %w", err)
+	}
 	return rooms, nil
 }
 
@@ -138,6 +142,10 @@ func (r *RoomRepository) GetMembers(roomID string) ([]*domain.RoomMember, error)
 			return nil, fmt.Errorf("repository: failed to scan room member: %w", err)
 		}
 		members = append(members, m)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("repository: error iterating members: %w", err)
 	}
 	return members, nil
 }
