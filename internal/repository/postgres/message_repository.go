@@ -10,6 +10,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Compile-time check: MessageRepository must implement domain.MessageRepository
+var _ domain.MessageRepository = (*MessageRepository)(nil)
+
 type MessageRepository struct {
 	db *pgxpool.Pool
 }

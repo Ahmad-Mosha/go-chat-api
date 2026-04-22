@@ -24,4 +24,7 @@ type RoomRepository interface {
 	AddMember(roomID, userID string) error
 	RemoveMember(roomID, userID string) error
 	GetRoomsByUser(userID string) ([]*Room, error)
+	IsMember(roomID, userID string) (bool, error)
+	GetMembers(roomID string) ([]*RoomMember, error)
+	UpdateLastMessage(roomID string, t time.Time) error
 }

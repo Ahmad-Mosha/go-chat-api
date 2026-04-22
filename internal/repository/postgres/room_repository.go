@@ -4,11 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Ahmad-Mosha/go-chat-api/internal/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// Compile-time check: RoomRepository must implement domain.RoomRepository
+var _ domain.RoomRepository = (*RoomRepository)(nil)
 
 type RoomRepository struct {
 	db *pgxpool.Pool
@@ -103,4 +107,47 @@ func (r *RoomRepository) GetRoomsByUser(userID string) ([]*domain.Room, error) {
 		rooms = append(rooms, room)
 	}
 	return rooms, nil
+}
+
+// IsMember checks if a user is a member of a specific room.
+func (r *RoomRepository) IsMember(roomID, userID string) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM room_members WHERE room_id = $1 AND user_id = $2)`
+
+	var exists bool
+	err := r.db.QueryRow(context.Background(), query, roomID, userID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("repository: failed to check membership: %w", err)
+	}
+	return exists, nil
+}
+
+// GetMembers retrieves all members of a specific room.
+func (r *RoomRepository) GetMembers(roomID string) ([]*domain.RoomMember, error) {
+	query := `SELECT room_id, user_id, joined_at, last_read_at FROM room_members WHERE room_id = $1`
+
+	rows, err := r.db.Query(context.Background(), query, roomID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: failed to get room members: %w", err)
+	}
+	defer rows.Close()
+
+	var members []*domain.RoomMember
+	for rows.Next() {
+		m := &domain.RoomMember{}
+		if err := rows.Scan(&m.RoomID, &m.UserID, &m.JoinedAt, &m.LastReadAt); err != nil {
+			return nil, fmt.Errorf("repository: failed to scan room member: %w", err)
+		}
+		members = append(members, m)
+	}
+	return members, nil
+}
+
+// UpdateLastMessage updates the last_message_at timestamp for a room.
+func (r *RoomRepository) UpdateLastMessage(roomID string, t time.Time) error {
+	query := `UPDATE rooms SET last_message_at = $1 WHERE id = $2`
+	_, err := r.db.Exec(context.Background(), query, t, roomID)
+	if err != nil {
+		return fmt.Errorf("repository: failed to update last message time: %w", err)
+	}
+	return nil
 }
