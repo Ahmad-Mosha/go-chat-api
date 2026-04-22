@@ -19,6 +19,7 @@ type RoomMember struct {
 
 type RoomRepository interface {
 	Create(room *Room) error
+	CreateWithMembers(room *Room, memberIDs []string) error
 	GetByID(id string) (*Room, error)
 	FindOneToOneRoom(userA, userB string) (*Room, error)
 	AddMember(roomID, userID string) error

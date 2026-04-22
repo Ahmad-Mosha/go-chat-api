@@ -62,23 +62,17 @@ func (s *ChatService) CreateRoom(creatorID, name string, isGroup bool, memberIDs
 		LastMessageAt: now,
 	}
 
-	if err := s.roomRepo.Create(room); err != nil {
-		return nil, fmt.Errorf("failed to create room: %w", err)
-	}
-
-	// Add the creator as a member
-	if err := s.roomRepo.AddMember(room.ID, creatorID); err != nil {
-		return nil, fmt.Errorf("failed to add creator to room: %w", err)
-	}
-
-	// Add other members
+	// Build the full member list: creator + other members (deduplicated)
+	allMembers := []string{creatorID}
 	for _, memberID := range memberIDs {
-		if memberID == creatorID {
-			continue // Already added
+		if memberID != creatorID {
+			allMembers = append(allMembers, memberID)
 		}
-		if err := s.roomRepo.AddMember(room.ID, memberID); err != nil {
-			return nil, fmt.Errorf("failed to add member %s: %w", memberID, err)
-		}
+	}
+
+	// Create room and add all members in a single transaction
+	if err := s.roomRepo.CreateWithMembers(room, allMembers); err != nil {
+		return nil, fmt.Errorf("failed to create room: %w", err)
 	}
 
 	return room, nil
