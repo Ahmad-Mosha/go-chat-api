@@ -31,6 +31,35 @@ func (r *RoomRepository) Create(room *domain.Room) error {
 	return nil
 }
 
+// CreateWithMembers creates a room and adds all members in a single transaction.
+// If any step fails, the entire operation is rolled back.
+func (r *RoomRepository) CreateWithMembers(room *domain.Room, memberIDs []string) error {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return fmt.Errorf("repository: failed to begin transaction: %w", err)
+	}
+	// Rollback is safe to call even after commit — it becomes a no-op
+	defer tx.Rollback(context.Background())
+
+	// Insert the room
+	roomQuery := `INSERT INTO rooms (id, name, is_group, created_at, last_message_at) VALUES ($1, $2, $3, $4, $5)`
+	_, err = tx.Exec(context.Background(), roomQuery, room.ID, room.Name, room.IsGroup, room.CreatedAt, room.LastMessageAt)
+	if err != nil {
+		return fmt.Errorf("repository: failed to create room: %w", err)
+	}
+
+	// Insert all members
+	memberQuery := `INSERT INTO room_members (room_id, user_id, joined_at, last_read_at) VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+	for _, memberID := range memberIDs {
+		_, err = tx.Exec(context.Background(), memberQuery, room.ID, memberID)
+		if err != nil {
+			return fmt.Errorf("repository: failed to add member %s: %w", memberID, err)
+		}
+	}
+
+	return tx.Commit(context.Background())
+}
+
 func (r *RoomRepository) GetByID(id string) (*domain.Room, error) {
 	query := `SELECT id, name, is_group, created_at, last_message_at FROM rooms WHERE id = $1`
 	room := &domain.Room{}
