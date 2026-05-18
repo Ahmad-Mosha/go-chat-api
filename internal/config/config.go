@@ -19,6 +19,13 @@ func LoadConfig() (*Config, error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv() // Read from environment variables if set
 
+	// Explicitly bind environment variables so Viper knows to look for them even without a .env file
+	viper.BindEnv("APP_ENV")
+	viper.BindEnv("TURSO_URL")
+	viper.BindEnv("TURSO_AUTH_TOKEN")
+	viper.BindEnv("PORT")
+	viper.BindEnv("JWT_SECRET")
+
 	// Read from .env file if it exists (mostly for local development)
 	if err := viper.ReadInConfig(); err != nil {
 		// It's ok if .env is missing in production, we'll use system environment variables
