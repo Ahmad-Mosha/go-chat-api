@@ -15,6 +15,21 @@ var (
 	ErrUserNotFound      = errors.New("user not found")
 )
 
+// UserProfile is the public user shape returned by the API.
+type UserProfile struct {
+	ID       string
+	Username string
+	Email    string
+}
+
+func toUserProfile(user *domain.User) *UserProfile {
+	return &UserProfile{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+	}
+}
+
 type UserService struct {
 	userRepo domain.UserRepository
 }
@@ -57,16 +72,22 @@ func (s *UserService) Register(username, email, password string) (*domain.User, 
 	return user, nil
 }
 
-// GetProfile fetches a user's profile and removes sensitive data.
-func (s *UserService) GetProfile(id string) (*domain.User, error) {
+// GetProfile fetches a user's public profile by ID.
+func (s *UserService) GetProfile(id string) (*UserProfile, error) {
 	user, err := s.userRepo.GetByID(id)
 	if err != nil {
 		return nil, ErrUserNotFound
 	}
 
-	// We return a copy of the user and clear the password hash for security
-	profile := *user
-	profile.PasswordHash = ""
+	return toUserProfile(user), nil
+}
 
-	return &profile, nil
+// GetByEmail fetches a user's public profile by email (for starting 1:1 chats).
+func (s *UserService) GetByEmail(email string) (*UserProfile, error) {
+	user, err := s.userRepo.GetByEmail(email)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	return toUserProfile(user), nil
 }

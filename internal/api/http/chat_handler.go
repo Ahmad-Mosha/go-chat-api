@@ -148,3 +148,23 @@ func (h *ChatHandler) GetRoomMessages(c *gin.Context) {
 		"messages": messages,
 	})
 }
+
+// GetRoomMembers handles GET /rooms/:id/members
+func (h *ChatHandler) GetRoomMembers(c *gin.Context) {
+	userID := c.GetString("user_id")
+	roomID := c.Param("id")
+
+	memberIDs, err := h.chatService.GetRoomMemberIDs(roomID, userID)
+	if err != nil {
+		if errors.Is(err, service.ErrNotRoomMember) {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"member_ids": memberIDs,
+	})
+}

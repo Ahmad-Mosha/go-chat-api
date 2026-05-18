@@ -161,3 +161,25 @@ func (s *ChatService) GetRoomMessages(roomID, userID string, limit, offset int) 
 	}
 	return messages, nil
 }
+
+// GetRoomMemberIDs returns member user IDs for a room when the requester is a member.
+func (s *ChatService) GetRoomMemberIDs(roomID, userID string) ([]string, error) {
+	isMember, err := s.roomRepo.IsMember(roomID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check membership: %w", err)
+	}
+	if !isMember {
+		return nil, ErrNotRoomMember
+	}
+
+	members, err := s.roomRepo.GetMembers(roomID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get room members: %w", err)
+	}
+
+	ids := make([]string, 0, len(members))
+	for _, m := range members {
+		ids = append(ids, m.UserID)
+	}
+	return ids, nil
+}

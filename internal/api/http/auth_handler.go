@@ -71,7 +71,24 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	userID, err := h.authService.ValidateToken(token)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read session"})
+		return
+	}
+
+	profile, err := h.userService.GetProfile(userID)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"token":   token,
+			"user_id": userID,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+		"token":    token,
+		"user_id":  profile.ID,
+		"username": profile.Username,
 	})
 }

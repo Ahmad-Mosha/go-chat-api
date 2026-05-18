@@ -14,6 +14,7 @@ import (
 // SetupRouter handles the dependency injection and route configuration
 func SetupRouter(db *sql.DB, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
+	r.Use(middleware.CORSMiddleware())
 
 	// --- Dependency Injection ---
 
@@ -33,7 +34,7 @@ func SetupRouter(db *sql.DB, cfg *config.Config) *gin.Engine {
 
 	// Handlers
 	authHandler := NewAuthHandler(userService, authService)
-	// Optionally, we could pass the Hub to chatHandler if it needs to broadcast from REST endpoints.
+	userHandler := NewUserHandler(userService)
 	chatHandler := NewChatHandler(chatService)
 	wsHandler := ws.NewHandler(wsHub, chatService)
 
@@ -57,12 +58,13 @@ func SetupRouter(db *sql.DB, cfg *config.Config) *gin.Engine {
 		api.POST("/rooms", chatHandler.CreateRoom)
 		api.GET("/rooms", chatHandler.GetUserRooms)
 		api.GET("/rooms/:id", chatHandler.GetRoom)
+		api.GET("/rooms/:id/members", chatHandler.GetRoomMembers)
 		api.POST("/rooms/:id/messages", chatHandler.SendMessage)
 		api.GET("/rooms/:id/messages", chatHandler.GetRoomMessages)
-		
-		// WebSocket endpoint (also protected by JWT middleware via query or header depending on client)
-		// For a real app, clients often pass JWT in a query param since browser JS WS API can't set headers easily.
-		// For now, we will use the same middleware which expects the "Authorization" header.
+
+		api.GET("/users/lookup", userHandler.LookupUser)
+		api.GET("/users/:id", userHandler.GetUser)
+
 		api.GET("/ws", wsHandler.ServeWS)
 	}
 
