@@ -1,25 +1,26 @@
 package http
 
 import (
+	"database/sql"
+
 	"github.com/Ahmad-Mosha/go-chat-api/internal/api/http/middleware"
 	"github.com/Ahmad-Mosha/go-chat-api/internal/api/ws"
 	"github.com/Ahmad-Mosha/go-chat-api/internal/config"
-	"github.com/Ahmad-Mosha/go-chat-api/internal/repository/postgres"
+	"github.com/Ahmad-Mosha/go-chat-api/internal/repository/sqlite"
 	"github.com/Ahmad-Mosha/go-chat-api/internal/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // SetupRouter handles the dependency injection and route configuration
-func SetupRouter(dbPool *pgxpool.Pool, cfg *config.Config) *gin.Engine {
+func SetupRouter(db *sql.DB, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 
 	// --- Dependency Injection ---
 
 	// Repositories
-	userRepo := postgres.NewUserRepository(dbPool)
-	roomRepo := postgres.NewRoomRepository(dbPool)
-	msgRepo := postgres.NewMessageRepository(dbPool)
+	userRepo := sqlite.NewUserRepository(db)
+	roomRepo := sqlite.NewRoomRepository(db)
+	msgRepo := sqlite.NewMessageRepository(db)
 
 	// Services
 	userService := service.NewUserService(userRepo)
