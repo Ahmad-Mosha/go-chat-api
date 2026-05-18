@@ -23,7 +23,6 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/chat-api .
-COPY --from=builder /app/.env .env
 
 # Expose port (Render sets this dynamically, but 8080 is our default)
 EXPOSE 8080
