@@ -2,30 +2,42 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	DBUser     string `mapstructure:"DB_USER"`
-	DBPassword string `mapstructure:"DB_PASSWORD"`
-	DBName     string `mapstructure:"DB_NAME"`
-	DBPort     string `mapstructure:"DB_PORT"`
-	DBHost     string `mapstructure:"DB_HOST"`
-	ServerPort string `mapstructure:"SERVER_PORT"`
-	JWTSecret  string `mapstructure:"JWT_SECRET"`
+	AppEnv         string `mapstructure:"APP_ENV"`
+	TursoURL       string `mapstructure:"TURSO_URL"`
+	TursoAuthToken string `mapstructure:"TURSO_AUTH_TOKEN"`
+	ServerPort     string `mapstructure:"PORT"` // Changed from SERVER_PORT to PORT for Render
+	JWTSecret      string `mapstructure:"JWT_SECRET"`
 }
 
 func LoadConfig() (*Config, error) {
 	viper.SetConfigFile(".env")
+	viper.AutomaticEnv() // Read from environment variables if set
 
+	// Read from .env file if it exists (mostly for local development)
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("error while loading .env file: %w", err)
+		// It's ok if .env is missing in production, we'll use system environment variables
+		if !os.IsNotExist(err) && viper.GetString("APP_ENV") == "development" {
+			fmt.Printf("Warning: error reading .env file: %v\n", err)
+		}
 	}
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("unable to decode into struct, %v", err)
+	}
+
+	// Set defaults
+	if config.ServerPort == "" {
+		config.ServerPort = "8080"
+	}
+	if config.AppEnv == "" {
+		config.AppEnv = "development"
 	}
 
 	return &config, nil
