@@ -2,6 +2,7 @@ package http
 
 import (
 	"database/sql"
+	"net/http"
 
 	"github.com/Ahmad-Mosha/go-chat-api/internal/api/http/middleware"
 	"github.com/Ahmad-Mosha/go-chat-api/internal/api/ws"
@@ -41,9 +42,16 @@ func SetupRouter(db *sql.DB, cfg *config.Config) *gin.Engine {
 	// --- Routes ---
 
 	// Health Check
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "UP"})
-	})
+	healthCheck := func(c *gin.Context) {
+		if c.Request.Method == http.MethodHead {
+			c.Status(http.StatusOK)
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "UP"})
+	}
+	r.GET("/health", healthCheck)
+	r.HEAD("/health", healthCheck)
 
 	// Auth Group (public)
 	authGroup := r.Group("/auth")
